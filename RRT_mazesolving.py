@@ -8,7 +8,36 @@ class Obstacle:
         self.obstacle = obstacle
     def default(self):
         if self.obstacle ==None:
-            self.obstacle = [((0,0),(0,2)), ((-1,2),(2,2)), ((2,2),(2,4)), ((2,4),(0,4)), ((0,4),(0,5)), ((0,5),(5,5))]
+            # Format: [((x1, y1), (x2, y2)), ...]
+            # Assumed Map Size: 10x10 area
+            self.obstacle = [
+                # --- Outer Boundary ---
+                ((0, 0), (0, 1)),
+                ((0, 2), (0, 10)),   # Left Wall
+                ((0, 10), (10, 10)), # Top Wall
+                ((10, 10), (10, 0)), # Right Wall
+                ((10, 0), (0, 0)),   # Bottom Wall
+
+                # --- Internal Walls ---
+                # Top Left section
+                ((0, 8), (4, 8)),
+                ((4, 8), (4, 5)),
+
+                # Top Right section
+                ((6, 10), (6, 7)),
+                ((6, 7), (8, 7)),
+
+                # Middle-Left section (The 'T' shape touching the left wall)
+                ((2, 2), (2, 6)),      # The vertical bar
+                ((0, 4.5), (2, 4.5)),  # The horizontal connector to the left wall
+
+                # Center Long Horizontal wall
+                ((4, 5), (9, 5)),
+
+                # Bottom Right section
+                ((6, 0), (6, 2.5)),    # Vertical stem from bottom
+                ((6, 2.5), (8, 2.5))   # Horizontal nub
+            ]
         return self.obstacle
 obs = Obstacle()
 obs.default()  # Initialize obstacles
@@ -367,7 +396,7 @@ def visualize_rrt_example():
     obstacles.default()
     
     # Define start and goal positions
-    start_node = Node(1, 1)
+    start_node = Node(-1, 1)
     goal_node = Node(4, 4)
     map_size = 6
     
