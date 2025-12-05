@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Tuple, Literal
 from collections import deque 
 import heapq
+import math 
 
 
 app = FastAPI()
@@ -270,68 +270,110 @@ def flood_fill_solve(maze):
     return steps, filled
 
 # A star 
-def astar_solve(maze):
+def astar_manhattan_solve(maze):
     rows, cols = len(maze), len(maze[0])
     start = (0, 0)
     end = (rows - 1, cols - 1)
 
-    if maze[0][0] == 1 or maze[end[0]][end[1]] == 1:
-        return [], []
-
-    # Heuristic (Manhattan distance)
-    def heuristic(r, c):
+    def h(r, c):
         return abs(r - end[0]) + abs(c - end[1])
 
-    # Min-heap: (f, g, r, c)
-    heap = [(heuristic(0, 0), 0, 0, 0)]  
+    heap = [(h(0, 0), 0, 0, 0)]
     visited = set()
-    parents = {start: None}
+    parent = {start: None}
     steps = []
 
-    directions = [(1,0), (-1,0), (0,1), (0,-1)]
+    dirs = [(1,0), (-1,0), (0,1), (0,-1)]
 
     while heap:
         f, g, r, c = heapq.heappop(heap)
-
-        # Already visited
         if (r, c) in visited:
             continue
 
         visited.add((r, c))
         steps.append([r, c])
 
-        # Goal reached
         if (r, c) == end:
             break
 
-        # Expand neighbors
-        for dr, dc in directions:
+        for dr, dc in dirs:
             nr, nc = r + dr, c + dc
-
             if (
-                0 <= nr < rows and
-                0 <= nc < cols and
-                maze[nr][nc] == 0 and
-                (nr, nc) not in visited
+                0 <= nr < rows and 0 <= nc < cols and
+                maze[nr][nc] == 0 and (nr, nc) not in visited
             ):
                 new_g = g + 1
-                new_f = new_g + heuristic(nr, nc)
-
-                parents[(nr, nc)] = (r, c) # type: ignore
+                new_f = new_g + h(nr, nc)
+                parent[(nr, nc)] = (r, c) # type: ignore
                 heapq.heappush(heap, (new_f, new_g, nr, nc))
 
-    # Reconstruct path
-    path = []
-    curr = end
-    if curr not in parents:
+    # path reconstruction
+    if end not in parent:
         return steps, []
 
-    while curr is not None:
-        path.append(list(curr))
-        curr = parents[curr] #type: ignore
+    path = []
+    cur = end
+    while cur is not None:
+        path.append(list(cur))
+        cur = parent[cur] # type: ignore
 
-    path.reverse()
-    return steps, path
+    return steps, path[::-1]
+
+
+def astar_euclidean_solve(maze):
+    rows, cols = len(maze), len(maze[0])
+    start = (0,0)
+    end = (rows - 1, cols - 1)
+
+    def h(r,c):
+        return math.sqrt((r-end[0])**2 + (c-end[1])**2)
+
+    heap = [(h(0,0), 0, 0,0)]
+    parent = {start: None}
+    visited = set()
+    steps = []
+
+    dirs = [
+        (1,0), (-1,0), (0,1), (0,-1),  
+        (1,1), (1,-1), (-1,1), (-1,-1)  
+    ]
+
+    while heap:
+        f,g,r,c = heapq.heappop(heap)
+        if (r,c) in visited:
+            continue
+
+        visited.add((r,c))
+        steps.append([r,c])
+
+        if (r,c) == end:
+            break
+
+        for dr,dc in dirs:
+            nr,nc = r+dr, c+dc
+            if (
+                0 <= nr < rows and 0 <= nc < cols and
+                maze[nr][nc] == 0 and (nr,nc) not in visited
+            ):
+                cost = math.sqrt(2) if dr != 0 and dc != 0 else 1
+                new_g = g + cost
+                new_f = new_g + h(nr,nc)
+
+                parent[(nr,nc)] = (r,c) # type: ignore
+                heapq.heappush(heap, (new_f, new_g, nr,nc)) # type: ignore
+
+    if end not in parent:
+        return steps, []
+
+    path = []
+    cur = end
+    while cur is not None:
+        path.append(list(cur))
+        cur = parent[cur] # type: ignore
+
+    return steps, path[::-1]
+
+
 
 
 
@@ -351,12 +393,11 @@ def solve(req: SolveRequest):
         steps, path = dfs_solve(maze)
     elif req.algorithm == "flood":
         steps, path = flood_fill_solve(maze)
-    elif req.algorithm == "astar":
-        steps, path = astar_solve(maze)
+    elif req.algorithm == "astar_manhattan":
+        steps, path = astar_manhattan_solve(maze)
+    elif req.algorithm == "astar_euclidean":
+        steps, path = astar_euclidean_solve(maze)
 
-    return {
-        "steps": steps,
-        "path": path,
-        "maze": maze
-    }
+    return {"steps": steps, "path": path, "maze": maze}
+
 

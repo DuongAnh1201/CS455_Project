@@ -58,9 +58,18 @@ function HomePage() {
           <h2 className="section-label">Maze Difficulty</h2>
 
           <div className="button-group">
-            <button onClick={() => setMaze("easy")} className={`option-btn ${maze === "easy" ? "selected" : ""}`}>Easy</button>
-            <button onClick={() => setMaze("medium")} className={`option-btn ${maze === "medium" ? "selected" : ""}`}>Medium</button>
-            <button onClick={() => setMaze("hard")} className={`option-btn ${maze === "hard" ? "selected" : ""}`}>Hard</button>
+            <button onClick={() => setMaze("easy")}
+              className={`option-btn ${maze === "easy" ? "selected" : ""}`}>
+              Easy
+            </button>
+            <button onClick={() => setMaze("medium")}
+              className={`option-btn ${maze === "medium" ? "selected" : ""}`}>
+              Medium
+            </button>
+            <button onClick={() => setMaze("hard")}
+              className={`option-btn ${maze === "hard" ? "selected" : ""}`}>
+              Hard
+            </button>
           </div>
         </section>
 
@@ -70,51 +79,90 @@ function HomePage() {
             <h2 className="section-label">Algorithm</h2>
 
             <div className="button-group">
-              <button onClick={() => setAlgo1("bfs")} className={`option-btn ${algo1 === "bfs" ? "selected" : ""}`}>BFS</button>
-              <button onClick={() => setAlgo1("dfs")} className={`option-btn ${algo1 === "dfs" ? "selected" : ""}`}>DFS</button>
-              <button onClick={() => setAlgo1("flood")} className={`option-btn ${algo1 === "flood" ? "selected" : ""}`}>Flood Fill</button>
+              <button onClick={() => setAlgo1("bfs")}
+                className={`option-btn ${algo1 === "bfs" ? "selected" : ""}`}>
+                BFS
+              </button>
 
-              {/* ⭐ A* BUTTON — SINGLE MODE */}
-              <button
-                onClick={() => setAlgo1("astar")}
-                className={`option-btn ${algo1 === "astar" ? "selected" : ""}`}
-              >
-                A*
+              <button onClick={() => setAlgo1("dfs")}
+                className={`option-btn ${algo1 === "dfs" ? "selected" : ""}`}>
+                DFS
+              </button>
+
+              <button onClick={() => setAlgo1("flood")}
+                className={`option-btn ${algo1 === "flood" ? "selected" : ""}`}>
+                Flood Fill
+              </button>
+
+              {/* NEW A* OPTIONS */}
+              <button onClick={() => setAlgo1("astar_manhattan")}
+                className={`option-btn ${algo1 === "astar_manhattan" ? "selected" : ""}`}>
+                A* (Manhattan)
+              </button>
+
+              <button onClick={() => setAlgo1("astar_euclidean")}
+                className={`option-btn ${algo1 === "astar_euclidean" ? "selected" : ""}`}>
+                A* (Euclidean + Diag)
               </button>
             </div>
           </section>
-
         ) : (
           <section className="section">
             <h2 className="section-label">Select Algorithms</h2>
 
             {/* Algorithm 1 */}
             <div className="button-group">
-              <button onClick={() => setAlgo1("bfs")} className={`option-btn ${algo1 === "bfs" ? "selected" : ""}`}>BFS</button>
-              <button onClick={() => setAlgo1("dfs")} className={`option-btn ${algo1 === "dfs" ? "selected" : ""}`}>DFS</button>
-              <button onClick={() => setAlgo1("flood")} className={`option-btn ${algo1 === "flood" ? "selected" : ""}`}>Flood Fill</button>
+              <button onClick={() => setAlgo1("bfs")}
+                className={`option-btn ${algo1 === "bfs" ? "selected" : ""}`}>
+                BFS
+              </button>
 
-              {/* ⭐ A* BUTTON — ALGO1 */}
-              <button
-                onClick={() => setAlgo1("astar")}
-                className={`option-btn ${algo1 === "astar" ? "selected" : ""}`}
-              >
-                A*
+              <button onClick={() => setAlgo1("dfs")}
+                className={`option-btn ${algo1 === "dfs" ? "selected" : ""}`}>
+                DFS
+              </button>
+
+              <button onClick={() => setAlgo1("flood")}
+                className={`option-btn ${algo1 === "flood" ? "selected" : ""}`}>
+                Flood Fill
+              </button>
+
+              <button onClick={() => setAlgo1("astar_manhattan")}
+                className={`option-btn ${algo1 === "astar_manhattan" ? "selected" : ""}`}>
+                A* (Manhattan)
+              </button>
+
+              <button onClick={() => setAlgo1("astar_euclidean")}
+                className={`option-btn ${algo1 === "astar_euclidean" ? "selected" : ""}`}>
+                A* (Euclidean + Diag)
               </button>
             </div>
 
             {/* Algorithm 2 */}
             <div className="button-group" style={{ marginTop: "10px" }}>
-              <button onClick={() => setAlgo2("bfs")} className={`option-btn ${algo2 === "bfs" ? "selected" : ""}`}>BFS</button>
-              <button onClick={() => setAlgo2("dfs")} className={`option-btn ${algo2 === "dfs" ? "selected" : ""}`}>DFS</button>
-              <button onClick={() => setAlgo2("flood")} className={`option-btn ${algo2 === "flood" ? "selected" : ""}`}>Flood Fill</button>
+              <button onClick={() => setAlgo2("bfs")}
+                className={`option-btn ${algo2 === "bfs" ? "selected" : ""}`}>
+                BFS
+              </button>
 
-              {/* ⭐ A* BUTTON — ALGO2 */}
-              <button
-                onClick={() => setAlgo2("astar")}
-                className={`option-btn ${algo2 === "astar" ? "selected" : ""}`}
-              >
-                A*
+              <button onClick={() => setAlgo2("dfs")}
+                className={`option-btn ${algo2 === "dfs" ? "selected" : ""}`}>
+                DFS
+              </button>
+
+              <button onClick={() => setAlgo2("flood")}
+                className={`option-btn ${algo2 === "flood" ? "selected" : ""}`}>
+                Flood Fill
+              </button>
+
+              <button onClick={() => setAlgo2("astar_manhattan")}
+                className={`option-btn ${algo2 === "astar_manhattan" ? "selected" : ""}`}>
+                A* (Manhattan)
+              </button>
+
+              <button onClick={() => setAlgo2("astar_euclidean")}
+                className={`option-btn ${algo2 === "astar_euclidean" ? "selected" : ""}`}>
+                A* (Euclidean + Diag)
               </button>
             </div>
           </section>
