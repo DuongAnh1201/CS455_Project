@@ -21,7 +21,7 @@ def free(self, r, c):
   return self.maze[r][c] == 0
 
 def neighbors(self, r, c): 
-  direcrtions = [(1,0), (-1,0), (0,1), (0,-1)]
+  directions = [(1,0), (-1,0), (0,1), (0,-1)]
   for dr, dc in directions:
     nr, nc = r + dr, c + dc
     if self.inbounds(nr, nc) and self.free(nr, nc):
