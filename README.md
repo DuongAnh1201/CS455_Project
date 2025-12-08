@@ -36,33 +36,43 @@ Based on random tree theory in pathfinding, primarily used in robotics applicati
 # Clone the repository
 git clone [repository-url]
 
-# Navigate to project directory
-cd maze-solving-visualizer
+# Navigate to backend
+cd backend
 
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Install Node.js dependencies for the frontend
-cd ui
-npm install
-cd ..
-```
 
 ## Usage
 
-```bash
-# Start the Python backend (in one terminal)
-python main.py
+# start the backend server
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
-# Start the React frontend (in another terminal)
-cd ui
+# Backend will run
+http://localhost:8000
+
+
+# Install Node.js dependencies for the frontend
+cd frontend
+npm install
 npm start
+
+# Frontend will be live at
+http://localhost:3000
 ```
 
-1. Select a maze layout from the available options
-2. Choose an algorithm (BFS, Flood Fill, or Randomized Search)
-3. Click "Start" to visualize the algorithm solving the maze
-4. Compare results across different algorithms
+1. Select a maze difficulty
+2. Choose visualization mode:
+ - Single Algorithm
+ - Compare Algorithms
+3. Choose your algorithm(s):
+ - BFS
+ - DFS
+ - Flood Fill
+ - A* (Manhattan)
+ - A* (Euclidean)
+4. Click Start Visualization
+5. Watch the algorithm solve the maze in real time!
 
 ## Project Goals
 
@@ -75,5 +85,6 @@ npm start
 
 All team members contribute to core algorithm implementation. For specific questions or contributions related to different aspects:
 - UI/UX: Contact Aayush
-- Project coordination: Contact Tom
-- Documentation: Contact Anthony or Josiah
+- Backend setup and algorithms: Contact Aayush ( DFS, A*)
+- Project coordination: Contact Tom (RRT)
+- Documentation: Contact Anthony or Josiah (BFS AND Flood Fill)
