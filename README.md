@@ -26,7 +26,7 @@ Based on random tree theory in pathfinding, primarily used in robotics applicati
 
 ## Technology Stack
 
-- **Backend/Algorithms**: Python 3.12
+- **Backend/Algorithms**: Python 3.12, FastAPI 
 - **Frontend**: JavaScript, React
 - **Visualization**: Real-time rendering with React components
 
