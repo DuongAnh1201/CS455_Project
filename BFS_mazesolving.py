@@ -1,4 +1,18 @@
 from collections import deque
+from typing import List, Optional
+
+from maze_core import Grid, Pos
+
+Path = List[Pos]
+
+
+def solve(grid: Grid, start: Pos, goal: Pos) -> Optional[Path]:
+    """Return shortest path (unweighted) as list of (row, col), or None."""
+    b = BFS(grid, start, goal)
+    if b.solve():
+        return b.path_result
+    return None
+
 
 class BFS:
     def __init__(self, maze, start, goal):

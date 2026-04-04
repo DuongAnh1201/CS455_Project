@@ -1,9 +1,3 @@
-# Core Dependencies
-flask==3.0.0
-flask-cors==4.0.0
-
-# Data structures and algorithms
-numpy==1.26.2
-
-# Optional: For advanced visualizations or data handling
-matplotlib==3.8.2
+numpy>=1.24
+matplotlib>=3.7
+pygame>=2.5

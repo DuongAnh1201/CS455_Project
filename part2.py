@@ -1,53 +1,107 @@
-import random
-import time
+import argparse
 import os
+import random
 import sys
 
 sys.setrecursionlimit(10000)
 
-WIDTH = 20
-HEIGHT = 6
+from maze_core import (
+    DEFAULT_HEIGHT as HEIGHT,
+    DEFAULT_WIDTH as WIDTH,
+    find_corner_goal,
+    generate_maze_grid,
+    stdout_wall_char,
+)
 
-# Create maze grid (1 = wall, 0 = path)
-maze = [[1 for _ in range(WIDTH)] for _ in range(HEIGHT)]
+maze: list[list[int]] = []
 
-# Move directions
-DIRS = [(0,1), (0,-1), (1,0), (-1,0)]
 
-def clear():
-    os.system("cls" if os.name == "nt" else "clear")
+def generate_maze(animate: bool = True) -> list[list[int]]:
+    """Build a new maze; returns the grid (same algorithm as before, via maze_core)."""
+    global maze
+    rng = random.Random()
+    on_step = None
+    if animate:
+        wall, free = stdout_wall_char()
 
-def print_maze_step():
-    clear()
-    for row in maze:
-        print("".join("█" if cell == 1 else " " for cell in row))
-    time.sleep(0.15)
+        def on_step_fn(g: list[list[int]]) -> None:
+            os.system("cls" if os.name == "nt" else "clear")
+            for row in g:
+                print("".join(wall if cell == 1 else free for cell in row))
+            import time
 
-def in_bounds(x, y):
-    return 0 <= x < WIDTH and 0 <= y < HEIGHT
+            time.sleep(0.15)
 
-def flood_maze(x, y):
-    maze[y][x] = 0  # carve the cell
-    print_maze_step()
+        on_step = on_step_fn
+        os.system("cls" if os.name == "nt" else "clear")
 
-    dirs = DIRS[:]
-    random.shuffle(dirs)      # randomize directions
+    maze = generate_maze_grid(WIDTH, HEIGHT, rng=rng, on_step=on_step)
+    if animate and on_step:
+        on_step(maze)
+    return maze
 
-    for dx, dy in dirs:
-        nx, ny = x + dx*2, y + dy*2 
 
-        # Check if 2 cells away is in bounds AND still a wall
-        if in_bounds(nx, ny) and maze[ny][nx] == 1:
+def run_rrt_on_generated_maze(
+    maze_grid: list[list[int]],
+    show_plot: bool = True,
+    save_path: str | None = None,
+) -> object:
+    """Plan with RRT in continuous space using wall segments from the grid maze."""
+    from RRT_mazesolving import rrt_on_grid_maze
+    import matplotlib.pyplot as plt
 
-            # Carve the wall between
-            maze[y + dy][x + dx] = 0
-            print_maze_step()
+    start = (0, 0)
+    goal = find_corner_goal(maze_grid)
+    rrt = rrt_on_grid_maze(
+        maze_grid,
+        start_rc=start,
+        goal_rc=goal,
+        iter=8000,
+        step_size=0.35,
+    )
+    title = "RRT on generated maze"
+    if rrt._goal_reached:
+        print(f"RRT: goal reached, path length {len(rrt._path)} waypoints.")
+    else:
+        print("RRT: goal not reached; try increasing iter or step_size.")
+    fig, ax = rrt.visualize(title=title)
+    if save_path:
+        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+        print(f"Saved RRT figure to {save_path}")
+    if show_plot:
+        plt.show()
+    else:
+        plt.close(fig)
+    return rrt
 
-            # Recursively flood next cell
-            flood_maze(nx, ny)
-    print
 
-clear()
-flood_maze(0, 0)
-print_maze_step()
-print("MAZE FINISHED")
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(description="Generate a maze and plan with RRT.")
+    p.add_argument(
+        "--fast",
+        action="store_true",
+        help="Skip maze animation (no clear/sleep during generation).",
+    )
+    p.add_argument(
+        "--no-plot",
+        action="store_true",
+        help="Do not open a window for the RRT figure.",
+    )
+    p.add_argument(
+        "--save-rrt",
+        metavar="FILE",
+        help="Save the RRT plot as a PNG (e.g. rrt.png).",
+    )
+    args = p.parse_args()
+    show_window = not args.no_plot
+    if not show_window and not args.save_rrt:
+        args.save_rrt = "rrt_maze.png"
+        print("No display requested; saving RRT plot to rrt_maze.png (use --save-rrt to pick a path).")
+
+    generate_maze(animate=not args.fast)
+    print("MAZE FINISHED")
+    run_rrt_on_generated_maze(
+        maze,
+        show_plot=show_window,
+        save_path=args.save_rrt,
+    )

@@ -2,7 +2,139 @@ import random
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
+
+
+def maze_grid_to_wall_segments(maze):
+    """
+    Convert a grid maze (1 = wall, 0 = path) to line segments for RRT collision checks.
+    maze[row][col] with row 0 = top; world uses y upward, so row r maps to y in
+    [HEIGHT - 1 - r, HEIGHT - r].
+    Returns a list of ((x1, y1), (x2, y2)) segments along open/wall boundaries.
+    """
+    height = len(maze)
+    width = len(maze[0]) if height else 0
+    segments = []
+
+    def is_wall(r, c):
+        if r < 0 or r >= height or c < 0 or c >= width:
+            return True
+        return maze[r][c] == 1
+
+    for r in range(height):
+        for c in range(width):
+            if not is_wall(r, c):
+                continue
+            wy = height - 1 - r
+            # Left edge at x=c
+            if not is_wall(r, c - 1):
+                segments.append(((c, wy), (c, wy + 1)))
+            # Right edge at x=c+1
+            if not is_wall(r, c + 1):
+                segments.append(((c + 1, wy), (c + 1, wy + 1)))
+            # Bottom edge at y=wy
+            if not is_wall(r + 1, c):
+                segments.append(((c, wy), (c + 1, wy)))
+            # Top edge at y=wy+1
+            if not is_wall(r - 1, c):
+                segments.append(((c, wy + 1), (c + 1, wy + 1)))
+
+    # Keep the robot inside the grid (open cells on the border have no wall segment otherwise)
+    segments.extend(
+        [
+            ((0, 0), (width, 0)),
+            ((width, 0), (width, height)),
+            ((width, height), (0, height)),
+            ((0, height), (0, 0)),
+        ]
+    )
+    return segments
+
+
+def cell_center_to_world(col, row, height):
+    """Grid index maze[row][col] -> continuous (x, y) with y measured from bottom."""
+    return (col + 0.5, height - row - 0.5)
+
+
+def rrt_on_grid_maze(maze, start_rc, goal_rc, iter=4000, step_size=0.4):
+    """
+    Run RRT on a grid maze. start_rc / goal_rc are (row, col) with maze[row][col].
+    """
+    height = len(maze)
+    width = len(maze[0]) if height else 0
+    segs = maze_grid_to_wall_segments(maze)
+    obs = Obstacle(obstacle=segs)
+    sr, sc = start_rc
+    gr, gc = goal_rc
+    sx, sy = cell_center_to_world(sc, sr, height)
+    gx, gy = cell_center_to_world(gc, gr, height)
+    rrt = RRT(
+        start=Node(sx, sy),
+        goal=Node(gx, gy),
+        map_size=(width, height),
+        obstacle=obs,
+        iter=iter,
+        step_size=step_size,
+    )
+    rrt.plan()
+    return rrt
+
+
+def world_path_to_grid_path(path_xy, grid):
+    """Map continuous RRT polyline to a list of (row, col) on open cells."""
+    if not path_xy:
+        return None
+    height = len(grid)
+    width = len(grid[0]) if height else 0
+    out = []
+    for x, y in path_xy:
+        c = int(round(x - 0.5))
+        r = int(round(height - y - 0.5))
+        r = max(0, min(height - 1, r))
+        c = max(0, min(width - 1, c))
+        if grid[r][c] != 0:
+            continue
+        cell = (r, c)
+        if not out or out[-1] != cell:
+            out.append(cell)
+    return out if out else None
+
+
+def _densify_snapped_path(grid, raw_cells):
+    """Connect snapped RRT cells with shortest grid segments (fixes non-adjacent jumps)."""
+    import BFS_mazesolving
+    from maze_core import neighbors4
+
+    if not raw_cells:
+        return None
+    full = [raw_cells[0]]
+    for i in range(1, len(raw_cells)):
+        cur = raw_cells[i]
+        prev = full[-1]
+        if cur == prev:
+            continue
+        if cur in neighbors4(grid, prev[0], prev[1]):
+            full.append(cur)
+            continue
+        seg = BFS_mazesolving.solve(grid, prev, cur)
+        if seg is None:
+            return None
+        full.extend(seg[1:])
+    return full
+
+
+def solve_grid(maze, start_rc, goal_rc, iter=8000, step_size=0.35):
+    """
+    Same role as BFS/DFS/A* `solve`: return list of (row, col) or None.
+    """
+    rrt = rrt_on_grid_maze(maze, start_rc, goal_rc, iter=iter, step_size=step_size)
+    if not rrt._goal_reached or not rrt._path:
+        return None
+    raw = world_path_to_grid_path(rrt._path, maze)
+    if raw is None:
+        return None
+    return _densify_snapped_path(maze, raw)
+
+
 class Obstacle:
     def __init__(self, obstacle = None):
         self.obstacle = obstacle
@@ -51,7 +183,11 @@ class RRT:
     def __init__(self, start, goal, map_size, obstacle = obs, iter = 500, step_size = 0.5):
         self._start = start
         self._goal = goal
-        self._map_size = map_size
+        if isinstance(map_size, (tuple, list)) and len(map_size) == 2:
+            self._map_w, self._map_h = float(map_size[0]), float(map_size[1])
+        else:
+            self._map_w = self._map_h = float(map_size)
+        self._map_size = max(self._map_w, self._map_h)
         self._obstacle = obstacle
         self._node_list = [self._start]
         self._goal_reached = False
@@ -62,8 +198,11 @@ class RRT:
     
     def random_node(self):
         """Generate a random node in the map."""
-        if random.random()<=0.2:
-            rand_node = Node(random.randint(0, self._map_size), random.randint(0, self._map_size))
+        if random.random() <= 0.2:
+            rand_node = Node(
+                random.uniform(0, self._map_w),
+                random.uniform(0, self._map_h),
+            )
         else:
             rand_node = Node(self._goal.x, self._goal.y)
         return rand_node
@@ -271,8 +410,8 @@ class RRT:
                   zorder=7, label='Goal')
         
         # Set plot properties
-        ax.set_xlim(-1, self._map_size + 1)
-        ax.set_ylim(-1, self._map_size + 1)
+        ax.set_xlim(-1, self._map_w + 1)
+        ax.set_ylim(-1, self._map_h + 1)
         ax.set_aspect('equal')
         ax.grid(True, alpha=0.3, linestyle='--')
         ax.set_xlabel('X', fontsize=12)
@@ -372,8 +511,8 @@ class RRT:
                 break
         
         # Set plot properties
-        ax.set_xlim(-1, self._map_size + 1)
-        ax.set_ylim(-1, self._map_size + 1)
+        ax.set_xlim(-1, self._map_w + 1)
+        ax.set_ylim(-1, self._map_h + 1)
         ax.set_aspect('equal')
         ax.grid(True, alpha=0.3, linestyle='--')
         ax.set_xlabel('X', fontsize=12)
